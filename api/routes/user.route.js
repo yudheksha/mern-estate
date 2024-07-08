@@ -1,11 +1,17 @@
 import express from "express";
-import { test, updateUser } from "../controllers/user.controller.js";
+import { deleteUser, test, updateUser } from "../controllers/user.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 
 const router = express.Router();
 
 // API Route
-router.get("/test", test);
-router.post("/update/:id", verifyToken, updateUser);
+// API Routes
+router.get('/test', (req, res) => {
+    console.log('/test route accessed');
+    res.status(200).json({ message: 'Test route accessed' });
+  });
+  router.post("/update/:id", verifyToken, updateUser);
+router.delete("/delete/:id", verifyToken, deleteUser);
+
 
 export default router;

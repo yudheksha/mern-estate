@@ -37,3 +37,30 @@ export const updateUser = async (req, res, next) => {
     next(error);
   }
 };
+
+
+
+export const deleteUser = async (req, res, next) => {
+  console.log('deleteUser function executed');
+  console.log('Request User ID:', req.user?.id); // Use optional chaining to avoid potential errors
+  console.log('Param User ID:', req.params.id);
+
+  if (req.user?.id !== req.params.id) {
+    console.log('User ID does not match, unauthorized deletion attempt');
+    return next(errorHandler(401, 'You can only delete your own account!'));
+  }
+
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      console.log('User not found');
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log('User deleted successfully');
+    res.clearCookie('access_token');
+    res.status(200).json({ message: 'User has been deleted!' });
+  } catch (error) {
+    console.log('Error deleting user:', error);
+    next(error);
+  }
+};

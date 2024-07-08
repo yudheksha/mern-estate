@@ -32,10 +32,12 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use(cookieParser());
-
-// Middleware to log parsed cookies for debugging
+// Global middleware for logging all requests
 app.use((req, res, next) => {
-  console.log("Parsed Cookies:", req.cookies);
+  console.log(`${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  console.log('Cookies:', req.cookies);
+  console.log("This is from the Index.js");
   next();
 });
 
@@ -44,10 +46,10 @@ app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 
 // Error handling middleware
-
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
+  console.log('Error:', message);
   return res.status(statusCode).json({
     success: false,
     statusCode,
