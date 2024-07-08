@@ -7,6 +7,7 @@ export const verifyToken = (req, res, next) => {
   console.log("Cookies:", req.cookies);
   const token = req.cookies.access_token;
   console.log("Token:", token);
+  console.log("verify Token is successful")
 
   if (!token) return next(errorHandler(401, "Unauthorized"));
 

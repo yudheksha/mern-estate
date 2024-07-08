@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import userRouter from "./routes/user.route.js";
 import authRouter from "./routes/auth.route.js";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 dotenv.config();
 
@@ -13,10 +14,21 @@ mongoose
     console.log("Connected to MongoDB!");
   })
   .catch((err) => {
-    console.log(err);
+    console.error("MongoDB connection error:", err);
   });
 
 const app = express();
+
+// CORS configuration
+const corsOptions = {
+  origin: 'http://localhost:5173', // The frontend origin
+  credentials: true, // Allow cookies and other credentials
+  methods: 'GET,POST,PUT,DELETE', // Allowed methods
+  allowedHeaders: 'Content-Type,Authorization' // Allowed headers
+};
+
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 app.use(cookieParser());
@@ -27,14 +39,11 @@ app.use((req, res, next) => {
   next();
 });
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
-});
 
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 
-//Middleware
+// Error handling middleware
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
@@ -44,4 +53,8 @@ app.use((err, req, res, next) => {
     statusCode,
     message,
   });
+});
+
+app.listen(3000, () => {
+  console.log("Server is running on port 3000");
 });
