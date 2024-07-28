@@ -391,6 +391,7 @@ export default function CreateListing() {
                   className="w-20 h-20 object-contain rounded-lg"
                 />
                 <button
+                  type="button"
                   onClick={() => handleRemoveImage(index)}
                   className="p-3 text-red-700 rounded-lg uppercase hover:opacity-75"
                 >
@@ -402,7 +403,7 @@ export default function CreateListing() {
             disabled={loading || uploading}
             className="p-3 bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 disabled:opacity-80"
           >
-            {loading ? "Creating..." : "Update Listing"}
+            {loading ? "Updating..." : "Update Listing"}
           </button>
 
           {error && <p className="text-red-700 text-sm">{error}</p>}
