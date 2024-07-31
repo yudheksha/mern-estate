@@ -16,8 +16,9 @@ export default function Search() {
 
   const [loading, setLoading] = useState(false);
   const [listings, setListings] = useState([]);
+  const [showMore, setShowMore] = useState(false);
 
-  console.log(listings);
+  console.log('Initial Listings:', listings);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -28,6 +29,16 @@ export default function Search() {
     const offerFromUrl = urlParams.get("offer");
     const sortFromUrl = urlParams.get("sort");
     const orderFromUrl = urlParams.get("order");
+
+    console.log('URL Params:', {
+      searchTermFromUrl,
+      typeFromUrl,
+      parkingFromUrl,
+      furnishedFromUrl,
+      offerFromUrl,
+      sortFromUrl,
+      orderFromUrl,
+    });
 
     if (
       searchTermFromUrl ||
@@ -50,45 +61,68 @@ export default function Search() {
     }
 
     const fetchListings = async () => {
-      setLoading(true);
 
-      const searchQuery = urlParams.toString();
-      const res = await fetch(`/api/listing/get?${searchQuery}`);
-      const data = await res.json();
-      setListings(data);
-      setLoading(false);
+      setLoading(true);
+      setShowMore(false);
+
+      try {
+        const searchQuery = urlParams.toString();
+        console.log('Fetch Listings Query:', searchQuery);
+
+        const res = await fetch(`/api/listing/get?${searchQuery}`);
+        console.log('Fetch Response Status:', res.status);
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+        console.log('Fetched Listings Data:', data);
+
+        if (data.length > 8) {
+          setShowMore(true);
+        }
+        setListings(data);
+      } catch (error) {
+        console.error("Error fetching listings:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchListings();
   }, [window.location.search]);
 
   const handleChange = (e) => {
+    const { id, value, checked } = e.target;
+    console.log('Handle Change:', { id, value, checked });
+
     if (
-      e.target.id === "all" ||
-      e.target.id === "rent" ||
-      e.target.id === "sale"
+      id === "all" ||
+      id === "rent" ||
+      id === "sale"
     ) {
-      setSidebardata({ ...sidebardata, type: e.target.id });
+      setSidebardata({ ...sidebardata, type: id });
     }
 
-    if (e.target.id === "searchTerm") {
-      setSidebardata({ ...sidebardata, searchTerm: e.target.value });
+    if (id === "searchTerm") {
+      setSidebardata({ ...sidebardata, searchTerm: value });
     }
 
     if (
-      e.target.id === "parking" ||
-      e.target.id === "furnished" ||
-      e.target.id === "offer"
+      id === "parking" ||
+      id === "furnished" ||
+      id === "offer"
     ) {
       setSidebardata({
         ...sidebardata,
-        [e.target.id]: e.target.checked,
+        [id]: checked,
       });
     }
 
-    if (e.target.id === "sort_order") {
-      const sort = e.target.value.split("_")[0] || "created_at";
-      const order = e.target.value.split("_")[1] || "desc";
+    if (id === "sort_order") {
+      const sort = value.split("_")[0] || "created_at";
+      const order = value.split("_")[1] || "desc";
 
       setSidebardata({ ...sidebardata, sort, order });
     }
@@ -98,15 +132,46 @@ export default function Search() {
     e.preventDefault();
 
     const urlParams = new URLSearchParams();
-    urlParams.set("searchTerm", sidebardata.searchTerm);
-    urlParams.set("type", sidebardata.type);
-    urlParams.set("parking", sidebardata.parking);
-    urlParams.set("furnished", sidebardata.furnished);
-    urlParams.set("offer", sidebardata.offer);
-    urlParams.set("sort", sidebardata.sort);
-    urlParams.set("order", sidebardata.order);
+    Object.keys(sidebardata).forEach((key) => {
+      urlParams.set(key, sidebardata[key]);
+    });
     const searchQuery = urlParams.toString();
+    console.log('Handle Submit Query:', searchQuery);
     navigate(`/search?${searchQuery}`);
+  };
+
+  const onShowMoreClick = async () => {
+    const numberOfListings = listings.length;
+    const startIndex = numberOfListings;
+    const urlParams = new URLSearchParams(location.search);
+    urlParams.set("startIndex", startIndex);
+
+    const searchQuery = urlParams.toString();
+    console.log('Show More Query:', searchQuery);
+
+    try {
+      const res = await fetch(`/api/listing/get?${searchQuery}`);
+      console.log('Show More Fetch Response Status:', res.status);
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log('Show More Fetched Data:', data);
+
+      if (data.length < 9) {
+        setShowMore(false);
+      } else {
+        setShowMore(true);;
+      }
+
+      // Avoid duplicates in the frontend
+      const newListings = data.filter(item => !listings.some(existingItem => existingItem._id === item._id));
+      setListings([...listings, ...newListings]);
+    } catch (error) {
+      console.error("Error fetching more listings:", error);
+    }
   };
 
   return (
@@ -237,6 +302,15 @@ export default function Search() {
             listings.map((listing) => (
               <ListingItem key={listing._id} listing={listing} />
             ))}
+
+          {showMore && (
+            <button
+              onClick={onShowMoreClick}
+              className="text-green-700 hover:underline p-7 text-center w-full"
+            >
+              Show more
+            </button>
+          )}
         </div>
       </div>
     </div>
