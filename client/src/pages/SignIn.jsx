@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { signInStart, signInSuccess, signInFailure } from '../redux/user/userSlice'
+import { signInStart, signInSuccess, signInFailure } from '../redux/user/userSlice';
 import OAuth from '../components/OAuth';
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
-  const { loading , error } = useSelector((state) => state.user);
+  const { loading, error } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -31,19 +31,24 @@ export default function SignIn() {
         body: JSON.stringify(formData),
       });
       const data = await res.json();
-      if (data.success === false) {
+      if (!res.ok) {
         dispatch(signInFailure(data.message));
         return;
       }
-      dispatch(signInSuccess(data));
+
+      const { token, ...user } = data;
+
+      // Store the token and user info in local storage
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      // Dispatch to Redux store
+      dispatch(signInSuccess({ ...user, token }));
       navigate('/');
     } catch (error) {
       dispatch(signInFailure(error.message));
     }
   };
-
-  // console.log(formData);
-  // console.log(er)
 
   return (
     <div className='p-3 max-w-lg mx-auto'>
@@ -57,7 +62,6 @@ export default function SignIn() {
           id='email'
           onChange={handleChange}
         />
-
         <input
           type='password'
           placeholder='password'
@@ -65,18 +69,17 @@ export default function SignIn() {
           id='password'
           onChange={handleChange}
         />
-
         <button
           disabled={loading}
           className='bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-80'
         >
           {loading ? 'Loading...' : 'Sign In'}
         </button>
-        <OAuth/>
+        <OAuth />
       </form>
 
       <div className='flex gap-2 mt-5'>
-        <p>Dont have an account?</p>
+        <p>Don't have an account?</p>
         <Link to='/sign-up'>
           <span className='text-blue-700'>Sign up</span>
         </Link>

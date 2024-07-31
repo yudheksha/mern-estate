@@ -4,50 +4,45 @@ import { errorHandler } from "../utils/error.js";
 import jwt from 'jsonwebtoken';
 
 export const signup = async (req, res, next) => {
-  const {userName, email, password} = req.body;
-  console.log(req.body)
-  console.log(userName)
+  const { userName, email, password } = req.body;
   const hashedPassword = bcryptjs.hashSync(password, 10);
-  console.log("Password Hashed")
-  const newUser = new User({userName:userName, email:email, password:hashedPassword});
-  console.log("New user created to save to database", newUser)
+  const newUser = new User({ userName, email, password: hashedPassword });
 
-  try{
-
+  try {
     await newUser.save();
-    console.log("saved to database")
-    res.status(201).json("User created successfully!");
+    
+    // Generate JWT token
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-  } catch(error) {
+    // Exclude password from the response
+    const { password, ...user } = newUser._doc;
 
+    // Send response with token and user information
+    res.status(201).json({ ...user, token });
+  } catch (error) {
     next(error);
-
   }
 };
 
 
 export const signin = async (req, res, next) => {
-  
-  const  {email, password} = req.body;
-  try{
-
+  const { email, password } = req.body;
+  try {
     const validUser = await User.findOne({ email });
     if (!validUser) return next(errorHandler(404, 'User not found!'));
     const validPassword = bcryptjs.compareSync(password, validUser.password);
-    if(!validPassword) return next(errorHandler(401, 'Wrong credentials!'));
-    const token = jwt.sign({ id: validUser._id}, process.env.JWT_SECRET )
-    const { password: pass, ...rest} = validUser._doc;
+    if (!validPassword) return next(errorHandler(401, 'Wrong credentials!'));
+    const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
+    const { password: pass, ...rest } = validUser._doc;
     res
-    .cookie('access_token', token, { httpOnly: true})
-    .status(200)
-    .json({rest});
-
-  } catch(error){
+      .cookie('access_token', token, { httpOnly: true })
+      .status(200)
+      .json({ ...rest, token });  // Include token in the response body
+  } catch (error) {
     next(error);
   }
-
-
 };
+
 
 export const google = async (req, res, next) => {
 
@@ -63,7 +58,7 @@ export const google = async (req, res, next) => {
       res
          .cookie('access_token', token, { httpOnly: true})
          .status(200)
-         .json(rest);
+         .json({...rest, token});
     } else {
 
 

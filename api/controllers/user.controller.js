@@ -10,15 +10,17 @@ export const test = (req, res) => {
 };
 
 export const updateUser = async (req, res, next) => {
-  if (req.user.id !== req.params.id)
+  if (req.user.id !== req.params.id) {
+    console.log(`Unauthorized update attempt by user: ${req.user.id} for user: ${req.params.id}`);
     return next(errorHandler(401, "You can only update your own account!"));
+  }
 
   try {
     if (req.body.password) {
       req.body.password = bcryptjs.hashSync(req.body.password, 10);
     }
 
-    const updateUser = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       {
         $set: {
@@ -31,7 +33,7 @@ export const updateUser = async (req, res, next) => {
       { new: true }
     );
 
-    const { password, ...rest } = updateUser._doc;
+    const { password, ...rest } = updatedUser._doc;
 
     res.status(200).json(rest);
   } catch (error) {

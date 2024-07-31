@@ -7,6 +7,7 @@ export default function SignUp() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -33,16 +34,19 @@ export default function SignUp() {
         setError(data.message);
         return;
       }
+
+      // Store the token and user info in local storage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
       setLoading(false);
       setError(null);
-      navigate('/sign-in');
+      navigate('/sign-in');  // Redirect to homepage or another page after signup
     } catch (error) {
       setLoading(false);
       setError(error.message);
     }
   };
-
-  console.log(formData);
 
   return (
     <div className='p-3 max-w-lg mx-auto'>

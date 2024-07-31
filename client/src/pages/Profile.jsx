@@ -29,6 +29,8 @@ export default function Profile() {
   const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState([]);
 
+  console.log(currentUser);
+
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -69,17 +71,31 @@ export default function Profile() {
     e.preventDefault();
     try {
       dispatch(updateUserStart());
-      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+
+      const token = currentUser?.token || localStorage.getItem('token');
+      if (!token) {
+        console.error("No token found");
+        return;
+      }
+
+      const userId = currentUser?._id || localStorage.getItem('userId');
+      if (!userId) {
+        console.error("No user ID found");
+        return;
+      }
+
+      const res = await fetch(`/api/user/update/${userId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`, // Ensure the token is sent with the request
         },
         body: JSON.stringify(formData),
       });
       const data = await res.json();
 
-      if (data.success === false) {
-        dispatch(updateUserFailure(data.message));
+      if (!res.ok) {
+        dispatch(updateUserFailure(data.message || "Failed to update user"));
         return;
       }
 
@@ -93,14 +109,30 @@ export default function Profile() {
   const handleDeleteUser = async () => {
     try {
       dispatch(deleteUserStart());
-      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+
+      const token = currentUser?.token || localStorage.getItem('token');
+      if (!token) {
+        console.error("No token found");
+        return;
+      }
+
+      const userId = currentUser?._id || localStorage.getItem('userId');
+      if (!userId) {
+        console.error("No user ID found");
+        return;
+      }
+
+      const res = await fetch(`/api/user/delete/${userId}`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`, // Ensure the token is sent with the request
+        },
       });
 
       const data = await res.json();
 
-      if (data.success === false) {
-        dispatch(deleteUserFailure(data.message));
+      if (!res.ok) {
+        dispatch(deleteUserFailure(data.message || "Failed to delete user"));
         return;
       }
       dispatch(deleteUserSuccess(data));
@@ -116,8 +148,8 @@ export default function Profile() {
       const res = await fetch("/api/auth/signout");
       const data = await res.json();
 
-      if (data.success === false) {
-        dispatch(deleteUserFailure(data.message));
+      if (!res.ok) {
+        dispatch(deleteUserFailure(data.message || "Failed to sign out"));
         return;
       }
 
@@ -131,10 +163,26 @@ export default function Profile() {
     try {
       setShowListingsError(false);
 
-      const res = await fetch(`/api/user/listings/${currentUser._id}`);
+      const token = currentUser?.token || localStorage.getItem('token');
+      if (!token) {
+        console.error("No token found");
+        return;
+      }
+
+      const userId = currentUser?._id || localStorage.getItem('userId');
+      if (!userId) {
+        console.error("No user ID found");
+        return;
+      }
+
+      const res = await fetch(`/api/user/listings/${userId}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`, // Ensure the token is sent with the request
+        },
+      });
       const data = await res.json();
 
-      if (data === false) {
+      if (!res.ok) {
         setShowListingsError(true);
         return;
       }
@@ -147,12 +195,21 @@ export default function Profile() {
 
   const handleListingDelete = async (listingID) => {
     try {
+      const token = currentUser?.token || localStorage.getItem('token');
+      if (!token) {
+        console.error("No token found");
+        return;
+      }
+
       const res = await fetch(`/api/listing/delete/${listingID}`, {
         method: 'DELETE',
+        headers: {
+          "Authorization": `Bearer ${token}`, // Ensure the token is sent with the request
+        },
       });
       const data = await res.json();
-      if(data.success === false) {
-        console.log(data.message);
+      if (!res.ok) {
+        console.log(data.message || "Failed to delete listing");
         return;
       }
 
@@ -289,7 +346,7 @@ export default function Profile() {
                   Delete
                 </button>
                 <Link to={`/update-listing/${listing._id}`}>
-                <button className="text-green-700 uppercase">Edit</button>
+                  <button className="text-green-700 uppercase">Edit</button>
                 </Link>
               </div>
             </div>
